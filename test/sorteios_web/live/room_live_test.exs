@@ -70,10 +70,10 @@ defmodule SorteiosWeb.RoomLiveTest do
       %{room: room_fixture()}
     end
 
-    test "non-admin sees the waiting message", %{conn: conn, room: room} do
+    test "non-admin sees the empty-state waiting message", %{conn: conn, room: room} do
       conn = conn_as_user(conn)
       {:ok, lv, _html} = live(conn, Routes.room_show_path(conn, :show, room))
-      assert render(lv) =~ "Wait for the admin to create a prize"
+      assert render(lv) =~ "Waiting for prizes to be added…"
     end
 
     test "non-admin does not see an Add prize button", %{conn: conn, room: room} do
@@ -91,7 +91,7 @@ defmodule SorteiosWeb.RoomLiveTest do
     test "admin does not see the waiting message", %{conn: conn, room: room} do
       conn = conn_as_admin(conn, room)
       {:ok, lv, _html} = live(conn, Routes.room_show_path(conn, :show, room))
-      refute render(lv) =~ "Wait for the admin to create a prize"
+      refute render(lv) =~ "Waiting for prizes to be added…"
     end
   end
 
@@ -165,10 +165,10 @@ defmodule SorteiosWeb.RoomLiveTest do
 
       lv |> element("button[phx-click='quick_add_prize']") |> render_click()
 
-      refute render(lv) =~ "Wait for the admin to create a prize"
+      refute render(lv) =~ "Waiting for prizes to be added…"
     end
 
-    test "the '+ Add prize' list-header button appears once prizes exist", %{
+    test "the 'Add prize' list-header button appears once prizes exist", %{
       conn: conn,
       room: room
     } do
@@ -177,7 +177,7 @@ defmodule SorteiosWeb.RoomLiveTest do
 
       lv |> element("button[phx-click='quick_add_prize']") |> render_click()
 
-      assert render(lv) =~ "+ Add prize"
+      assert render(lv) =~ "Add prize"
     end
   end
 
@@ -198,10 +198,10 @@ defmodule SorteiosWeb.RoomLiveTest do
       assert render(lv) =~ prize.name
     end
 
-    test "unclaimed prize shows 'No winner yet'", %{conn: conn, room: room} do
+    test "unclaimed prize is available to participants", %{conn: conn, room: room} do
       conn = conn_as_user(conn)
       {:ok, lv, _html} = live(conn, Routes.room_show_path(conn, :show, room))
-      assert render(lv) =~ "No winner yet"
+      assert render(lv) =~ "Available"
     end
 
     test "claimed prize shows the winner's name", %{conn: conn, room: room} do

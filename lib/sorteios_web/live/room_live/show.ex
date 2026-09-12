@@ -10,6 +10,8 @@ defmodule SorteiosWeb.RoomLive.Show do
 
   @impl true
   def mount(%{"id" => id}, %{"name" => name, "email" => email} = session, socket) do
+    Gettext.put_locale(SorteiosWeb.Gettext, session["locale"] || "en")
+
     if room = Rooms.get_room(id) do
       current_user = %{
         name: name,
@@ -31,7 +33,7 @@ defmodule SorteiosWeb.RoomLive.Show do
       socket =
         assign(
           socket,
-          page_title: "Room #{id}",
+          page_title: gettext("Room %{id}", id: id),
           admin?: session["admin:#{id}"] == id,
           id: id,
           room: room,
@@ -53,7 +55,7 @@ defmodule SorteiosWeb.RoomLive.Show do
     else
       {:ok,
        socket
-       |> put_flash(:error, "Room not found")
+       |> put_flash(:error, gettext("Room not found"))
        |> redirect(to: Routes.session_path(socket, :new))}
     end
   end
@@ -61,7 +63,7 @@ defmodule SorteiosWeb.RoomLive.Show do
   def mount(%{"id" => id}, _session, socket) do
     {:ok,
      socket
-     |> put_flash(:info, "You need to specify your name and email to enter")
+     |> put_flash(:info, gettext("You need to specify your name and email to enter"))
      |> redirect(to: Routes.session_path(socket, :new, room_id: id))}
   end
 
@@ -158,7 +160,7 @@ defmodule SorteiosWeb.RoomLive.Show do
         {:noreply,
          socket
          |> reload_prizes()
-         |> put_flash(:info, "Prize cloned successfully")}
+         |> put_flash(:info, gettext("Prize cloned successfully"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
@@ -178,7 +180,7 @@ defmodule SorteiosWeb.RoomLive.Show do
         {:noreply,
          socket
          |> reload_prizes()
-         |> put_flash(:info, "Prize removed successfully")}
+         |> put_flash(:info, gettext("Prize removed successfully"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
@@ -207,7 +209,7 @@ defmodule SorteiosWeb.RoomLive.Show do
     if prize && socket.assigns.random_person do
       {:noreply, award_prize(socket, prize)}
     else
-      {:noreply, put_flash(socket, :error, "No prize or winner found")}
+      {:noreply, put_flash(socket, :error, gettext("No prize or winner found"))}
     end
   end
 
