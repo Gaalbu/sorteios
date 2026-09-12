@@ -8,6 +8,9 @@ msgstr "não pode ficar em branco"
 msgid "has already been taken"
 msgstr "já está em uso"
 
+msgid "Room not found"
+msgstr "Sala não encontrada"
+
 msgid "is invalid"
 msgstr "é inválido"
 

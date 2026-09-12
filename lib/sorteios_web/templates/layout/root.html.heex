@@ -22,8 +22,11 @@
   </head>
   <body class="h-full">
     <nav class="fixed right-4 top-2 z-50 text-xs">
-      <a href={locale_path(@conn, "en")} class="mr-2">EN</a>
-      <a href={locale_path(@conn, "pt_BR")}>PT-BR</a>
+      <%= for {locale, index} <- Enum.with_index(known_locales()) do %>
+        <a href={locale_path(@conn, locale)} class={if index == 0, do: "mr-2", else: ""}>
+          {locale_label(locale)}
+        </a>
+      <% end %>
     </nav>
     {@inner_content}
   </body>

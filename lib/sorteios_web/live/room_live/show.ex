@@ -312,11 +312,8 @@ defmodule SorteiosWeb.RoomLive.Show do
     {:noreply, assign(socket, random_person: person, loading_winner?: false)}
   end
 
-  def handle_info(%{event: "draw_started", prize_id: prize_id}, socket) do
-    handle_info(
-      %{event: "draw_started", prize_id: prize_id, reservation_token: Ecto.UUID.generate()},
-      socket
-    )
+  def handle_info(%{event: "draw_started", prize_id: _prize_id}, socket) do
+    {:noreply, socket |> clear_active_draw() |> reload_prizes()}
   end
 
   def handle_info(

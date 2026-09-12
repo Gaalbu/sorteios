@@ -200,5 +200,25 @@ defmodule Sorteios.RoomsTest do
       assert {:error, :reservation_expired} = Rooms.confirm_prize_winner(prize.id, "token")
       assert is_nil(Rooms.get_prize!(prize.id).winner_email)
     end
+
+    test "returns a changeset error when a winner already won in the room" do
+      room = room_fixture()
+      first_prize = prize_fixture(room)
+      second_prize = prize_fixture(room)
+
+      assert {:ok, _first_prize} =
+               Rooms.update_prize(first_prize, %{
+                 winner_name: "Winner",
+                 winner_email: "winner@example.com"
+               })
+
+      assert {:error, changeset} =
+               Rooms.update_prize(second_prize, %{
+                 winner_name: "Winner",
+                 winner_email: "winner@example.com"
+               })
+
+      assert changeset.errors[:winner_email]
+    end
   end
 end

@@ -18,6 +18,9 @@ msgstr ""
 msgid "has already been taken"
 msgstr ""
 
+msgid "Room not found"
+msgstr ""
+
 ## From Ecto.Changeset.put_change/3
 msgid "is invalid"
 msgstr ""

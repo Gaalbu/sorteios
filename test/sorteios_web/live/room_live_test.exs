@@ -684,7 +684,7 @@ defmodule SorteiosWeb.RoomLiveTest do
       %{room: room, prize: prize}
     end
 
-    test "non-admin sees the overlay when draw_started is broadcast", %{
+    test "ignores legacy draw_started events without a reservation token", %{
       conn: conn,
       room: room,
       prize: prize
@@ -694,7 +694,7 @@ defmodule SorteiosWeb.RoomLiveTest do
 
       send(lv.pid, %{event: "draw_started", prize_id: prize.id})
 
-      assert render(lv) =~ "Drawing"
+      refute render(lv) =~ "Drawing"
     end
 
     test "non-admin overlay shows the prize name when draw_started is broadcast", %{
@@ -705,7 +705,11 @@ defmodule SorteiosWeb.RoomLiveTest do
       conn = conn_as_user(conn)
       {:ok, lv, _html} = live(conn, Routes.room_show_path(conn, :show, room))
 
-      send(lv.pid, %{event: "draw_started", prize_id: prize.id})
+      send(lv.pid, %{
+        event: "draw_started",
+        prize_id: prize.id,
+        reservation_token: "test-token"
+      })
 
       assert render(lv) =~ prize.name
     end
@@ -718,12 +722,17 @@ defmodule SorteiosWeb.RoomLiveTest do
       conn = conn_as_user(conn)
       {:ok, lv, _html} = live(conn, Routes.room_show_path(conn, :show, room))
 
-      send(lv.pid, %{event: "draw_started", prize_id: prize.id})
+      send(lv.pid, %{
+        event: "draw_started",
+        prize_id: prize.id,
+        reservation_token: "test-token"
+      })
 
       send(lv.pid, %{
         event: "draw_result",
         prize_id: prize.id,
-        person: %{name: "Jane Doe", email: "jane@example.com"}
+        person: %{name: "Jane Doe", email: "jane@example.com"},
+        reservation_token: "test-token"
       })
 
       assert render(lv) =~ "Jane Doe"
@@ -737,12 +746,17 @@ defmodule SorteiosWeb.RoomLiveTest do
       conn = conn_as_user(conn)
       {:ok, lv, _html} = live(conn, Routes.room_show_path(conn, :show, room))
 
-      send(lv.pid, %{event: "draw_started", prize_id: prize.id})
+      send(lv.pid, %{
+        event: "draw_started",
+        prize_id: prize.id,
+        reservation_token: "test-token"
+      })
 
       send(lv.pid, %{
         event: "draw_result",
         prize_id: prize.id,
-        person: %{name: "Jane Doe", email: "jane@example.com"}
+        person: %{name: "Jane Doe", email: "jane@example.com"},
+        reservation_token: "test-token"
       })
 
       refute has_element?(lv, "button[phx-click='confirm_prize_winner']")
@@ -757,12 +771,17 @@ defmodule SorteiosWeb.RoomLiveTest do
       conn = conn_as_user(conn)
       {:ok, lv, _html} = live(conn, Routes.room_show_path(conn, :show, room))
 
-      send(lv.pid, %{event: "draw_started", prize_id: prize.id})
+      send(lv.pid, %{
+        event: "draw_started",
+        prize_id: prize.id,
+        reservation_token: "test-token"
+      })
 
       send(lv.pid, %{
         event: "draw_result",
         prize_id: prize.id,
-        person: %{name: "Jane Doe", email: "jane@example.com"}
+        person: %{name: "Jane Doe", email: "jane@example.com"},
+        reservation_token: "test-token"
       })
 
       assert render(lv) =~ "Waiting for the admin"
