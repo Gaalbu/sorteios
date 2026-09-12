@@ -184,12 +184,20 @@ defmodule Sorteios.Rooms do
 
   @reservation_ttl_seconds 300
 
-  def reserve_prize_winner(prize_id, room_id, excluded_email) do
+  def reserve_prize_winner(prize_id, room_id, excluded_email, reservation_token) do
     case Repo.transaction(fn ->
-           Repo.one!(from room in Room, where: room.id == ^room_id, lock: "FOR UPDATE")
+           if is_nil(Repo.one(from room in Room, where: room.id == ^room_id, lock: "FOR UPDATE")) do
+             Repo.rollback(:room_not_found)
+           end
 
            prize =
-             Repo.one!(from prize in Prize, where: prize.id == ^prize_id, lock: "FOR UPDATE")
+             Repo.one(
+               from prize in Prize,
+                 where: prize.id == ^prize_id and prize.room_id == ^room_id,
+                 lock: "FOR UPDATE"
+             )
+
+           if is_nil(prize), do: Repo.rollback(:prize_not_found)
 
            cutoff = DateTime.add(DateTime.utc_now(), -@reservation_ttl_seconds, :second)
 
@@ -199,7 +207,8 @@ defmodule Sorteios.Rooms do
                |> Prize.changeset(%{
                  reserved_winner_name: nil,
                  reserved_winner_email: nil,
-                 reserved_at: nil
+                 reserved_at: nil,
+                 reservation_token: nil
                })
                |> Repo.update!()
              else
@@ -239,7 +248,8 @@ defmodule Sorteios.Rooms do
            |> Prize.changeset(%{
              reserved_winner_name: participant.name,
              reserved_winner_email: participant.email,
-             reserved_at: DateTime.utc_now()
+             reserved_at: DateTime.utc_now(),
+             reservation_token: reservation_token
            })
            |> Repo.update!()
 
@@ -252,12 +262,14 @@ defmodule Sorteios.Rooms do
     Enum.EmptyError -> {:error, :no_eligible_participant}
   end
 
-  def confirm_prize_winner(prize_id) do
+  def confirm_prize_winner(prize_id, reservation_token) do
     case Repo.transaction(fn ->
            prize =
-             Repo.one!(from prize in Prize, where: prize.id == ^prize_id, lock: "FOR UPDATE")
+             Repo.one(from prize in Prize, where: prize.id == ^prize_id, lock: "FOR UPDATE")
 
-           if is_nil(prize.reserved_winner_email) do
+           if is_nil(prize), do: Repo.rollback(:prize_not_found)
+
+           if prize.reservation_token != reservation_token do
              Repo.rollback(:winner_not_reserved)
            end
 
@@ -267,7 +279,8 @@ defmodule Sorteios.Rooms do
              winner_email: prize.reserved_winner_email,
              reserved_winner_name: nil,
              reserved_winner_email: nil,
-             reserved_at: nil
+             reserved_at: nil,
+             reservation_token: nil
            })
            |> Repo.update!()
          end) do
@@ -276,13 +289,21 @@ defmodule Sorteios.Rooms do
     end
   end
 
-  def clear_prize_winner_reservation(nil), do: :ok
+  def clear_prize_winner_reservation(nil, _reservation_token), do: :ok
 
-  def clear_prize_winner_reservation(prize_id) do
+  def clear_prize_winner_reservation(prize_id, reservation_token) do
     Prize
-    |> where([prize], prize.id == ^prize_id)
+    |> where(
+      [prize],
+      prize.id == ^prize_id and prize.reservation_token == ^reservation_token
+    )
     |> Repo.update_all(
-      set: [reserved_winner_name: nil, reserved_winner_email: nil, reserved_at: nil]
+      set: [
+        reserved_winner_name: nil,
+        reserved_winner_email: nil,
+        reserved_at: nil,
+        reservation_token: nil
+      ]
     )
   end
 

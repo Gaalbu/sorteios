@@ -44,7 +44,8 @@ defmodule SorteiosWeb.RoomLive.Show do
           invite_image: invite_image,
           random_person: nil,
           editing_prize_id: nil,
-          drawing_prize_id: nil
+          drawing_prize_id: nil,
+          reservation_token: nil
         )
 
       {:ok,
@@ -190,55 +191,89 @@ defmodule SorteiosWeb.RoomLive.Show do
   end
 
   def handle_event("draw_prize", %{"prize-id" => prize_id}, socket) do
-    Process.send_after(self(), {:run_search, prize_id}, 3000)
+    Rooms.clear_prize_winner_reservation(
+      socket.assigns.drawing_prize_id,
+      socket.assigns.reservation_token
+    )
+
+    reservation_token = Ecto.UUID.generate()
+    Process.send_after(self(), {:run_search, prize_id, reservation_token}, 3000)
 
     PubSub.broadcast_from!(Sorteios.PubSub, self(), topic(socket), %{
       event: "draw_started",
-      prize_id: prize_id
+      prize_id: prize_id,
+      reservation_token: reservation_token
     })
 
     {:noreply,
      assign(socket,
        drawing_prize_id: prize_id,
+       reservation_token: reservation_token,
        loading_winner?: true,
        random_person: nil
      )}
   end
 
   def handle_event("confirm_prize_winner", %{"prize-id" => prize_id}, socket) do
-    if socket.assigns.random_person do
-      {:noreply, award_prize(socket, prize_id)}
+    if socket.assigns.drawing_prize_id == prize_id &&
+         socket.assigns.random_person && socket.assigns.reservation_token do
+      {:noreply, award_prize(socket, prize_id, socket.assigns.reservation_token)}
     else
       {:noreply, put_flash(socket, :error, gettext("No prize or winner found"))}
     end
   end
 
   def handle_event("cancel_draw", _params, socket) do
-    Rooms.clear_prize_winner_reservation(socket.assigns.drawing_prize_id)
-    PubSub.broadcast_from!(Sorteios.PubSub, self(), topic(socket), %{event: "draw_cancelled"})
-    {:noreply, assign(socket, drawing_prize_id: nil, loading_winner?: false, random_person: nil)}
+    Rooms.clear_prize_winner_reservation(
+      socket.assigns.drawing_prize_id,
+      socket.assigns.reservation_token
+    )
+
+    PubSub.broadcast_from!(Sorteios.PubSub, self(), topic(socket), %{
+      event: "draw_cancelled",
+      prize_id: socket.assigns.drawing_prize_id,
+      reservation_token: socket.assigns.reservation_token
+    })
+
+    {:noreply,
+     assign(socket,
+       drawing_prize_id: nil,
+       reservation_token: nil,
+       loading_winner?: false,
+       random_person: nil
+     )}
   end
 
   @impl true
-  def handle_info({:run_search, prize_id}, socket) do
-    if socket.assigns.drawing_prize_id == prize_id do
+  def handle_info({:run_search, prize_id, reservation_token}, socket) do
+    if socket.assigns.drawing_prize_id == prize_id &&
+         socket.assigns.reservation_token == reservation_token do
       case Rooms.reserve_prize_winner(
              prize_id,
              socket.assigns.id,
-             socket.assigns.current_user.email
+             socket.assigns.current_user.email,
+             reservation_token
            ) do
         {:error, _reason} ->
           PubSub.broadcast_from!(Sorteios.PubSub, self(), topic(socket), %{
-            event: "draw_cancelled"
+            event: "draw_cancelled",
+            prize_id: prize_id,
+            reservation_token: reservation_token
           })
 
-          {:noreply, assign(socket, loading_winner?: false, drawing_prize_id: nil)}
+          {:noreply,
+           assign(socket,
+             loading_winner?: false,
+             drawing_prize_id: nil,
+             reservation_token: nil
+           )}
 
         {:ok, random_person} ->
           PubSub.broadcast_from!(Sorteios.PubSub, self(), topic(socket), %{
             event: "draw_result",
             prize_id: prize_id,
-            person: random_person
+            person: random_person,
+            reservation_token: reservation_token
           })
 
           {:noreply, assign(socket, random_person: random_person, loading_winner?: false)}
@@ -248,40 +283,118 @@ defmodule SorteiosWeb.RoomLive.Show do
     end
   end
 
-  def handle_info(%{event: "draw_started", prize_id: prize_id}, socket) do
+  def handle_info({:run_search, prize_id}, socket) do
+    handle_info({:run_search, prize_id, socket.assigns.reservation_token}, socket)
+  end
+
+  def handle_info(
+        %{event: "draw_started", prize_id: prize_id, reservation_token: reservation_token},
+        socket
+      ) do
     {:noreply,
      assign(socket,
        drawing_prize_id: prize_id,
+       reservation_token: reservation_token,
        loading_winner?: true,
        random_person: nil
      )}
+  end
+
+  def handle_info(
+        %{
+          event: "draw_result",
+          prize_id: prize_id,
+          person: person,
+          reservation_token: reservation_token
+        },
+        socket
+      ) do
+    if socket.assigns.drawing_prize_id == prize_id &&
+         socket.assigns.reservation_token == reservation_token do
+      {:noreply, assign(socket, random_person: person, loading_winner?: false)}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_info(%{event: "draw_result", person: person}, socket) do
     {:noreply, assign(socket, random_person: person, loading_winner?: false)}
   end
 
+  def handle_info(%{event: "draw_started", prize_id: prize_id}, socket) do
+    handle_info(
+      %{event: "draw_started", prize_id: prize_id, reservation_token: Ecto.UUID.generate()},
+      socket
+    )
+  end
+
+  def handle_info(
+        %{event: "draw_cancelled", prize_id: prize_id, reservation_token: reservation_token},
+        socket
+      ) do
+    if socket.assigns.drawing_prize_id == prize_id &&
+         socket.assigns.reservation_token == reservation_token do
+      {:noreply,
+       assign(socket,
+         drawing_prize_id: nil,
+         reservation_token: nil,
+         loading_winner?: false,
+         random_person: nil
+       )}
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_info(%{event: "draw_cancelled"}, socket) do
-    {:noreply, assign(socket, drawing_prize_id: nil, loading_winner?: false, random_person: nil)}
+    {:noreply,
+     assign(socket,
+       drawing_prize_id: nil,
+       reservation_token: nil,
+       loading_winner?: false,
+       random_person: nil
+     )}
   end
 
   def handle_info(%{event: "presence_diff"}, socket) do
     {:noreply, reload_users(socket)}
   end
 
-  def handle_info(%{event: "winner", winner: winner, prize: prize}, socket) do
-    socket =
-      socket
-      |> reload_prizes()
-      |> assign(:drawing_prize_id, nil)
-      |> assign(:random_person, nil)
-      |> assign(:loading_winner?, false)
-      |> put_flash(
-        :success,
-        gettext("%{winner} won %{prize}", winner: winner.name, prize: prize.name)
-      )
+  def handle_info(
+        %{event: "winner", winner: winner, prize: prize, reservation_token: reservation_token},
+        socket
+      ) do
+    socket = reload_prizes(socket)
 
-    {:noreply, socket}
+    if socket.assigns.drawing_prize_id == prize.id &&
+         socket.assigns.reservation_token == reservation_token do
+      {:noreply,
+       socket
+       |> assign(:drawing_prize_id, nil)
+       |> assign(:reservation_token, nil)
+       |> assign(:random_person, nil)
+       |> assign(:loading_winner?, false)
+       |> put_flash(
+         :success,
+         gettext("%{winner} won %{prize}", winner: winner.name, prize: prize.name)
+       )}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info(%{event: "winner", winner: winner, prize: prize}, socket) do
+    {:noreply,
+     socket
+     |> reload_prizes()
+     |> assign(:drawing_prize_id, nil)
+     |> assign(:reservation_token, nil)
+     |> assign(:random_person, nil)
+     |> assign(:loading_winner?, false)
+     |> put_flash(
+       :success,
+       gettext("%{winner} won %{prize}", winner: winner.name, prize: prize.name)
+     )}
   end
 
   def handle_info("reload_prizes", socket) do
@@ -291,26 +404,35 @@ defmodule SorteiosWeb.RoomLive.Show do
   defp topic(%{assigns: %{room: room}}), do: topic(room)
   defp topic(%Room{id: id}), do: "room:#{id}"
 
-  def award_prize(socket, prize_id) do
-    case Rooms.confirm_prize_winner(prize_id) do
+  def award_prize(socket, prize_id, reservation_token) do
+    case Rooms.confirm_prize_winner(prize_id, reservation_token) do
       {:ok, prize} ->
         winner = %{name: prize.winner_name, email: prize.winner_email}
 
         PubSub.broadcast!(Sorteios.PubSub, topic(socket), %{
           event: "winner",
           winner: winner,
-          prize: prize
+          prize: prize,
+          reservation_token: reservation_token
         })
 
         socket
         |> assign(:random_person, nil)
         |> assign(:drawing_prize_id, nil)
+        |> assign(:reservation_token, nil)
         |> reload_prizes()
 
       {:error, _reason} ->
+        PubSub.broadcast_from!(Sorteios.PubSub, self(), topic(socket), %{
+          event: "draw_cancelled",
+          prize_id: prize_id,
+          reservation_token: reservation_token
+        })
+
         socket
         |> assign(:random_person, nil)
         |> assign(:drawing_prize_id, nil)
+        |> assign(:reservation_token, nil)
         |> put_flash(:error, gettext("No prize or winner found"))
     end
   end

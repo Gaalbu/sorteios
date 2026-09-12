@@ -123,10 +123,20 @@ defmodule Sorteios.RoomsTest do
         })
 
       assert {:ok, first_winner} =
-               Rooms.reserve_prize_winner(first_prize.id, room.id, "admin@example.com")
+               Rooms.reserve_prize_winner(
+                 first_prize.id,
+                 room.id,
+                 "admin@example.com",
+                 "first-token"
+               )
 
       assert {:ok, second_winner} =
-               Rooms.reserve_prize_winner(second_prize.id, room.id, "admin@example.com")
+               Rooms.reserve_prize_winner(
+                 second_prize.id,
+                 room.id,
+                 "admin@example.com",
+                 "second-token"
+               )
 
       assert first_winner.email in [first_participant.email, second_participant.email]
       assert second_winner.email in [first_participant.email, second_participant.email]
@@ -144,10 +154,29 @@ defmodule Sorteios.RoomsTest do
           room_id: room.id
         })
 
-      assert {:ok, _winner} = Rooms.reserve_prize_winner(prize.id, room.id, "admin@example.com")
+      assert {:ok, _winner} =
+               Rooms.reserve_prize_winner(prize.id, room.id, "admin@example.com", "token")
 
       assert {:error, :prize_unavailable} =
-               Rooms.reserve_prize_winner(prize.id, room.id, "admin@example.com")
+               Rooms.reserve_prize_winner(prize.id, room.id, "admin@example.com", "other-token")
+    end
+
+    test "returns errors when the room or prize no longer exists" do
+      room = room_fixture()
+
+      assert {:error, :room_not_found} =
+               Rooms.reserve_prize_winner(
+                 Ecto.UUID.generate(),
+                 Ecto.UUID.generate(),
+                 "admin",
+                 "token"
+               )
+
+      assert {:error, :prize_not_found} =
+               Rooms.reserve_prize_winner(Ecto.UUID.generate(), room.id, "admin", "token")
+
+      assert {:error, :prize_not_found} =
+               Rooms.confirm_prize_winner(Ecto.UUID.generate(), "token")
     end
   end
 end

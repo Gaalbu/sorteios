@@ -497,6 +497,31 @@ defmodule SorteiosWeb.RoomLiveTest do
       assert has_element?(lv, "button[phx-click='draw_prize'][phx-value-prize-id='#{prize.id}']")
     end
 
+    test "re-drawing replaces the previous reservation", %{
+      conn: conn,
+      room: room,
+      prize: prize
+    } do
+      conn = conn_as_admin(conn, room)
+      {:ok, lv, _html} = live(conn, Routes.room_show_path(conn, :show, room))
+
+      lv
+      |> element("button[phx-click='draw_prize'][phx-value-prize-id='#{prize.id}']")
+      |> render_click()
+
+      send(lv.pid, {:run_search, prize.id})
+      assert has_element?(lv, "button[phx-click='draw_prize'][phx-value-prize-id='#{prize.id}']")
+
+      lv
+      |> element("button[phx-click='draw_prize'][phx-value-prize-id='#{prize.id}']")
+      |> render_click()
+
+      send(lv.pid, {:run_search, prize.id})
+
+      assert has_element?(lv, "div.winner-enter h3")
+      refute render(lv) =~ "Waiting for the admin to assign the prize"
+    end
+
     test "stale :run_search message for a cancelled draw is ignored", %{
       conn: conn,
       room: room,
