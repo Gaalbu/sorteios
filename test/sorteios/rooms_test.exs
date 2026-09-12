@@ -178,5 +178,27 @@ defmodule Sorteios.RoomsTest do
       assert {:error, :prize_not_found} =
                Rooms.confirm_prize_winner(Ecto.UUID.generate(), "token")
     end
+
+    test "does not confirm an expired reservation" do
+      room = room_fixture()
+      prize = prize_fixture(room)
+
+      {:ok, _participant} =
+        Rooms.create_participant(%{
+          name: "Participant",
+          email: "participant@example.com",
+          room_id: room.id
+        })
+
+      assert {:ok, _winner} =
+               Rooms.reserve_prize_winner(prize.id, room.id, "admin@example.com", "token")
+
+      expired_at = DateTime.add(DateTime.utc_now(), -301, :second)
+      prize = Rooms.get_prize!(prize.id)
+      assert {:ok, _prize} = Rooms.update_prize(prize, %{reserved_at: expired_at})
+
+      assert {:error, :reservation_expired} = Rooms.confirm_prize_winner(prize.id, "token")
+      assert is_nil(Rooms.get_prize!(prize.id).winner_email)
+    end
   end
 end

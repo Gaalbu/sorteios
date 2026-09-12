@@ -215,8 +215,8 @@ defmodule SorteiosWeb.RoomLive.Show do
   end
 
   def handle_event("confirm_prize_winner", %{"prize-id" => prize_id}, socket) do
-    if socket.assigns.drawing_prize_id == prize_id &&
-         socket.assigns.random_person && socket.assigns.reservation_token do
+    if active_draw?(socket, prize_id, socket.assigns.reservation_token) &&
+         socket.assigns.random_person do
       {:noreply, award_prize(socket, prize_id, socket.assigns.reservation_token)}
     else
       {:noreply, put_flash(socket, :error, gettext("No prize or winner found"))}
@@ -235,26 +235,19 @@ defmodule SorteiosWeb.RoomLive.Show do
       reservation_token: socket.assigns.reservation_token
     })
 
-    {:noreply,
-     assign(socket,
-       drawing_prize_id: nil,
-       reservation_token: nil,
-       loading_winner?: false,
-       random_person: nil
-     )}
+    {:noreply, clear_active_draw(socket)}
   end
 
   @impl true
   def handle_info({:run_search, prize_id, reservation_token}, socket) do
-    if socket.assigns.drawing_prize_id == prize_id &&
-         socket.assigns.reservation_token == reservation_token do
+    if active_draw?(socket, prize_id, reservation_token) do
       case Rooms.reserve_prize_winner(
              prize_id,
              socket.assigns.id,
              socket.assigns.current_user.email,
              reservation_token
            ) do
-        {:error, _reason} ->
+        {:error, reason} ->
           PubSub.broadcast_from!(Sorteios.PubSub, self(), topic(socket), %{
             event: "draw_cancelled",
             prize_id: prize_id,
@@ -262,11 +255,10 @@ defmodule SorteiosWeb.RoomLive.Show do
           })
 
           {:noreply,
-           assign(socket,
-             loading_winner?: false,
-             drawing_prize_id: nil,
-             reservation_token: nil
-           )}
+           socket
+           |> clear_active_draw()
+           |> reload_prizes()
+           |> put_flash(:error, draw_error_message(reason))}
 
         {:ok, random_person} ->
           PubSub.broadcast_from!(Sorteios.PubSub, self(), topic(socket), %{
@@ -309,8 +301,7 @@ defmodule SorteiosWeb.RoomLive.Show do
         },
         socket
       ) do
-    if socket.assigns.drawing_prize_id == prize_id &&
-         socket.assigns.reservation_token == reservation_token do
+    if active_draw?(socket, prize_id, reservation_token) do
       {:noreply, assign(socket, random_person: person, loading_winner?: false)}
     else
       {:noreply, socket}
@@ -332,28 +323,15 @@ defmodule SorteiosWeb.RoomLive.Show do
         %{event: "draw_cancelled", prize_id: prize_id, reservation_token: reservation_token},
         socket
       ) do
-    if socket.assigns.drawing_prize_id == prize_id &&
-         socket.assigns.reservation_token == reservation_token do
-      {:noreply,
-       assign(socket,
-         drawing_prize_id: nil,
-         reservation_token: nil,
-         loading_winner?: false,
-         random_person: nil
-       )}
+    if active_draw?(socket, prize_id, reservation_token) do
+      {:noreply, clear_active_draw(socket)}
     else
       {:noreply, socket}
     end
   end
 
   def handle_info(%{event: "draw_cancelled"}, socket) do
-    {:noreply,
-     assign(socket,
-       drawing_prize_id: nil,
-       reservation_token: nil,
-       loading_winner?: false,
-       random_person: nil
-     )}
+    {:noreply, clear_active_draw(socket)}
   end
 
   def handle_info(%{event: "presence_diff"}, socket) do
@@ -366,14 +344,10 @@ defmodule SorteiosWeb.RoomLive.Show do
       ) do
     socket = reload_prizes(socket)
 
-    if socket.assigns.drawing_prize_id == prize.id &&
-         socket.assigns.reservation_token == reservation_token do
+    if active_draw?(socket, prize.id, reservation_token) do
       {:noreply,
        socket
-       |> assign(:drawing_prize_id, nil)
-       |> assign(:reservation_token, nil)
-       |> assign(:random_person, nil)
-       |> assign(:loading_winner?, false)
+       |> clear_active_draw()
        |> put_flash(
          :success,
          gettext("%{winner} won %{prize}", winner: winner.name, prize: prize.name)
@@ -387,10 +361,7 @@ defmodule SorteiosWeb.RoomLive.Show do
     {:noreply,
      socket
      |> reload_prizes()
-     |> assign(:drawing_prize_id, nil)
-     |> assign(:reservation_token, nil)
-     |> assign(:random_person, nil)
-     |> assign(:loading_winner?, false)
+     |> clear_active_draw()
      |> put_flash(
        :success,
        gettext("%{winner} won %{prize}", winner: winner.name, prize: prize.name)
@@ -422,7 +393,7 @@ defmodule SorteiosWeb.RoomLive.Show do
         |> assign(:reservation_token, nil)
         |> reload_prizes()
 
-      {:error, _reason} ->
+      {:error, reason} ->
         PubSub.broadcast_from!(Sorteios.PubSub, self(), topic(socket), %{
           event: "draw_cancelled",
           prize_id: prize_id,
@@ -430,10 +401,9 @@ defmodule SorteiosWeb.RoomLive.Show do
         })
 
         socket
-        |> assign(:random_person, nil)
-        |> assign(:drawing_prize_id, nil)
-        |> assign(:reservation_token, nil)
-        |> put_flash(:error, gettext("No prize or winner found"))
+        |> clear_active_draw()
+        |> reload_prizes()
+        |> put_flash(:error, draw_error_message(reason))
     end
   end
 
@@ -442,6 +412,29 @@ defmodule SorteiosWeb.RoomLive.Show do
     |> assign(:prizes, Rooms.list_prizes(socket.assigns.id))
     |> filter_available_prizes()
   end
+
+  defp active_draw?(socket, prize_id, reservation_token) do
+    socket.assigns.drawing_prize_id == prize_id &&
+      socket.assigns.reservation_token == reservation_token &&
+      not is_nil(reservation_token)
+  end
+
+  defp clear_active_draw(socket) do
+    assign(socket,
+      drawing_prize_id: nil,
+      reservation_token: nil,
+      loading_winner?: false,
+      random_person: nil
+    )
+  end
+
+  defp draw_error_message(:prize_unavailable),
+    do: gettext("This prize is currently reserved; try again later")
+
+  defp draw_error_message(:reservation_expired),
+    do: gettext("The draw expired; please draw again")
+
+  defp draw_error_message(_reason), do: gettext("No prize or winner found")
 
   def compute_chance(users_length) do
     if users_length > 0 do

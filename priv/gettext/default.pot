@@ -11,13 +11,14 @@
 msgid ""
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.ex:277
+#: lib/sorteios_web/live/room_live/show.ex:352
+#: lib/sorteios_web/live/room_live/show.ex:366
 #, elixir-autogen, elixir-format
 msgid "%{winner} won %{prize}"
 msgstr ""
 
-#: lib/sorteios_web/templates/session/new.html.heex:57
-#: lib/sorteios_web/templates/session/new.html.heex:57
+#: lib/sorteios_web/templates/session/new.html.heex:58
+#: lib/sorteios_web/templates/session/new.html.heex:58
 #, elixir-autogen, elixir-format
 msgid "*If you already have an invite"
 msgstr ""
@@ -28,35 +29,35 @@ msgstr ""
 msgid "*Room ID"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:181
+#: lib/sorteios_web/live/room_live/show.html.heex:420
 #, elixir-autogen, elixir-format
 msgid "Add prize"
 msgstr ""
 
 #: lib/sorteios_web/live/components.ex:28
-#: lib/sorteios_web/live/room_live/show.html.heex:105
-#: lib/sorteios_web/live/room_live/show.html.heex:152
-#: lib/sorteios_web/live/room_live/show.html.heex:291
+#: lib/sorteios_web/live/room_live/show.html.heex:336
+#: lib/sorteios_web/live/room_live/show.html.heex:388
+#: lib/sorteios_web/live/room_live/show.html.heex:589
 #, elixir-autogen, elixir-format
 msgid "Are you sure? This cannot be undone"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:477
+#: lib/sorteios_web/live/room_live/show.html.heex:864
 #, elixir-autogen, elixir-format
 msgid "Available"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:25
+#: lib/sorteios_web/live/room_live/show.html.heex:57
 #, elixir-autogen, elixir-format
 msgid "Cancel draw"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:281
+#: lib/sorteios_web/live/room_live/show.html.heex:568
 #, elixir-autogen, elixir-format
 msgid "Clone prize"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:398
+#: lib/sorteios_web/live/room_live/show.html.heex:742
 #, elixir-autogen, elixir-format
 msgid "Copy URL"
 msgstr ""
@@ -72,32 +73,32 @@ msgstr ""
 msgid "Create or join a room"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:292
+#: lib/sorteios_web/live/room_live/show.html.heex:590
 #, elixir-autogen, elixir-format
 msgid "Delete prize"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:409
+#: lib/sorteios_web/live/room_live/show.html.heex:758
 #, elixir-autogen, elixir-format
 msgid "Download QR"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:369
+#: lib/sorteios_web/live/room_live/show.html.heex:704
 #, elixir-autogen, elixir-format
 msgid "Download QR Code"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:275
+#: lib/sorteios_web/live/room_live/show.html.heex:562
 #, elixir-autogen, elixir-format
 msgid "Draw"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:33
+#: lib/sorteios_web/live/room_live/show.html.heex:71
 #, elixir-autogen, elixir-format
 msgid "Drawing for"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:81
+#: lib/sorteios_web/live/room_live/show.html.heex:312
 #, elixir-autogen, elixir-format
 msgid "Drawing…"
 msgstr ""
@@ -118,12 +119,12 @@ msgstr ""
 msgid "GitHub Repo"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:352
+#: lib/sorteios_web/live/room_live/show.html.heex:683
 #, elixir-autogen, elixir-format
 msgid "Hide QR"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:418
+#: lib/sorteios_web/live/room_live/show.html.heex:768
 #, elixir-autogen, elixir-format
 msgid "In the room"
 msgstr ""
@@ -133,13 +134,13 @@ msgstr ""
 msgid "Information"
 msgstr ""
 
-#: lib/sorteios_web/templates/session/new.html.heex:70
-#: lib/sorteios_web/templates/session/new.html.heex:70
+#: lib/sorteios_web/templates/session/new.html.heex:74
+#: lib/sorteios_web/templates/session/new.html.heex:74
 #, elixir-autogen, elixir-format
 msgid "Instant room"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:344
+#: lib/sorteios_web/live/room_live/show.html.heex:671
 #, elixir-autogen, elixir-format
 msgid "Invite people"
 msgstr ""
@@ -151,7 +152,7 @@ msgid "Join room"
 msgstr ""
 
 #: lib/sorteios_web/live/components.ex:31
-#: lib/sorteios_web/live/room_live/show.html.heex:155
+#: lib/sorteios_web/live/room_live/show.html.heex:391
 #, elixir-autogen, elixir-format
 msgid "Logout"
 msgstr ""
@@ -167,22 +168,23 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:324
+#: lib/sorteios_web/live/room_live/show.html.heex:646
 #, elixir-autogen, elixir-format
 msgid "No participants yet."
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.ex:211
+#: lib/sorteios_web/live/room_live/show.ex:221
+#: lib/sorteios_web/live/room_live/show.ex:436
 #, elixir-autogen, elixir-format
 msgid "No prize or winner found"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:191
+#: lib/sorteios_web/live/room_live/show.html.heex:442
 #, elixir-autogen, elixir-format
 msgid "No prizes yet — add one to get started."
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:259
+#: lib/sorteios_web/live/room_live/show.html.heex:541
 #, elixir-autogen, elixir-format
 msgid "No winner yet"
 msgstr ""
@@ -193,38 +195,38 @@ msgstr ""
 msgid "Oops, something went wrong! Please check the errors below."
 msgstr ""
 
-#: lib/sorteios_web/templates/session/new.html.heex:65
-#: lib/sorteios_web/templates/session/new.html.heex:65
+#: lib/sorteios_web/templates/session/new.html.heex:68
+#: lib/sorteios_web/templates/session/new.html.heex:68
 #, elixir-autogen, elixir-format
 msgid "Or create an instant room"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:494
+#: lib/sorteios_web/live/room_live/show.html.heex:882
 #, elixir-autogen, elixir-format
 msgid "Other participants"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:313
+#: lib/sorteios_web/live/room_live/show.html.heex:622
 #, elixir-autogen, elixir-format
 msgid "Participants"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.ex:162
+#: lib/sorteios_web/live/room_live/show.ex:166
 #, elixir-autogen, elixir-format
 msgid "Prize cloned successfully"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.ex:182
+#: lib/sorteios_web/live/room_live/show.ex:186
 #, elixir-autogen, elixir-format
 msgid "Prize removed successfully"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:173
+#: lib/sorteios_web/live/room_live/show.html.heex:407
 #, elixir-autogen, elixir-format
 msgid "Prizes"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:100
+#: lib/sorteios_web/live/room_live/show.html.heex:331
 #, elixir-autogen, elixir-format
 msgid "Re-draw"
 msgstr ""
@@ -234,17 +236,17 @@ msgstr ""
 msgid "Region %{region}."
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.ex:35
+#: lib/sorteios_web/live/room_live/show.ex:36
 #, elixir-autogen, elixir-format
 msgid "Room %{id}"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.ex:57
+#: lib/sorteios_web/live/room_live/show.ex:59
 #, elixir-autogen, elixir-format
 msgid "Room not found"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:360
+#: lib/sorteios_web/live/room_live/show.html.heex:695
 #, elixir-autogen, elixir-format
 msgid "Show QR"
 msgstr ""
@@ -254,54 +256,70 @@ msgstr ""
 msgid "Success!"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:448
+#: lib/sorteios_web/live/room_live/show.html.heex:813
 #, elixir-autogen, elixir-format
 msgid "Waiting for prizes to be added…"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:112
+#: lib/sorteios_web/live/room_live/show.html.heex:344
 #, elixir-autogen, elixir-format
 msgid "Waiting for the admin to assign the prize…"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:472
+#: lib/sorteios_web/live/room_live/show.html.heex:859
 #, elixir-autogen, elixir-format
 msgid "Won by %{name}"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:510
+#: lib/sorteios_web/live/room_live/show.html.heex:913
 #, elixir-autogen, elixir-format
 msgid "You"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.ex:65
+#: lib/sorteios_web/live/room_live/show.ex:69
 #, elixir-autogen, elixir-format
 msgid "You need to specify your name and email to enter"
 msgstr ""
 
-#: lib/sorteios_web/templates/layout/root.html.heex:9
+#: lib/sorteios_web/templates/layout/root.html.heex:12
 #, elixir-autogen, elixir-format
 msgid "Your own prize drawing app"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:144
+#: lib/sorteios_web/live/room_live/show.html.heex:380
 #, elixir-autogen, elixir-format
 msgid "participants"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:421
+#: lib/sorteios_web/live/room_live/show.html.heex:772
 #, elixir-autogen, elixir-format
 msgid "person"
 msgid_plural "people"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:440
+#: lib/sorteios_web/live/room_live/show.html.heex:794
 #, elixir-autogen, elixir-format
 msgid "🎁 Prizes"
 msgstr ""
 
-#: lib/sorteios_web/live/room_live/show.html.heex:108
+#: lib/sorteios_web/live/room_live/show.html.heex:339
 #, elixir-autogen, elixir-format
 msgid "🎉 Assign prize"
+msgstr ""
+
+#: lib/sorteios_web/live/room_live/show.ex:117
+#: lib/sorteios_web/live/room_live/show.ex:147
+#, elixir-autogen, elixir-format
+msgid "Prize created successfully"
+msgstr ""
+
+#: lib/sorteios_web/live/room_live/show.ex:434
+#, elixir-autogen, elixir-format
+msgid "The draw expired; please draw again"
+msgstr ""
+
+#: lib/sorteios_web/live/room_live/show.ex:431
+#, elixir-autogen, elixir-format
+msgid "This prize is currently reserved; try again later"
 msgstr ""

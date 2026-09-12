@@ -269,20 +269,34 @@ defmodule Sorteios.Rooms do
 
            if is_nil(prize), do: Repo.rollback(:prize_not_found)
 
+           cutoff = DateTime.add(DateTime.utc_now(), -@reservation_ttl_seconds, :second)
+
            if prize.reservation_token != reservation_token do
              Repo.rollback(:winner_not_reserved)
            end
 
-           prize
-           |> Prize.changeset(%{
-             winner_name: prize.reserved_winner_name,
-             winner_email: prize.reserved_winner_email,
-             reserved_winner_name: nil,
-             reserved_winner_email: nil,
-             reserved_at: nil,
-             reservation_token: nil
-           })
-           |> Repo.update!()
+           if is_nil(prize.reserved_winner_email) || is_nil(prize.reserved_at) do
+             Repo.rollback(:winner_not_reserved)
+           end
+
+           if DateTime.compare(prize.reserved_at, cutoff) != :gt do
+             Repo.rollback(:reservation_expired)
+           end
+
+           changeset =
+             Prize.changeset(prize, %{
+               winner_name: prize.reserved_winner_name,
+               winner_email: prize.reserved_winner_email,
+               reserved_winner_name: nil,
+               reserved_winner_email: nil,
+               reserved_at: nil,
+               reservation_token: nil
+             })
+
+           case Repo.update(changeset) do
+             {:ok, prize} -> prize
+             {:error, _changeset} -> Repo.rollback(:winner_conflict)
+           end
          end) do
       {:ok, prize} -> {:ok, prize}
       {:error, reason} -> {:error, reason}
