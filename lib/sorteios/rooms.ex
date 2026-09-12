@@ -7,6 +7,7 @@ defmodule Sorteios.Rooms do
   alias Sorteios.Repo
 
   alias Sorteios.Rooms.Room
+  alias Sorteios.Rooms.Participant
 
   @doc """
   Returns the list of rooms.
@@ -181,6 +182,110 @@ defmodule Sorteios.Rooms do
     |> Repo.update()
   end
 
+  @reservation_ttl_seconds 300
+
+  def reserve_prize_winner(prize_id, room_id, excluded_email) do
+    case Repo.transaction(fn ->
+           Repo.one!(from room in Room, where: room.id == ^room_id, lock: "FOR UPDATE")
+
+           prize =
+             Repo.one!(from prize in Prize, where: prize.id == ^prize_id, lock: "FOR UPDATE")
+
+           cutoff = DateTime.add(DateTime.utc_now(), -@reservation_ttl_seconds, :second)
+
+           prize =
+             if prize.reserved_at && DateTime.compare(prize.reserved_at, cutoff) == :lt do
+               prize
+               |> Prize.changeset(%{
+                 reserved_winner_name: nil,
+                 reserved_winner_email: nil,
+                 reserved_at: nil
+               })
+               |> Repo.update!()
+             else
+               prize
+             end
+
+           if prize.winner_email || prize.reserved_winner_email do
+             Repo.rollback(:prize_unavailable)
+           end
+
+           claimed_emails =
+             from claimed in Prize,
+               where: claimed.room_id == ^room_id and not is_nil(claimed.winner_email),
+               select: claimed.winner_email
+
+           reserved_emails =
+             from reserved in Prize,
+               where:
+                 reserved.room_id == ^room_id and
+                   not is_nil(reserved.reserved_winner_email) and
+                   reserved.reserved_at > ^cutoff,
+               select: reserved.reserved_winner_email
+
+           participant =
+             Participant
+             |> where(
+               [participant],
+               participant.room_id == ^room_id and
+                 participant.email != ^excluded_email and
+                 participant.email not in subquery(claimed_emails) and
+                 participant.email not in subquery(reserved_emails)
+             )
+             |> Repo.all()
+             |> Enum.random()
+
+           prize
+           |> Prize.changeset(%{
+             reserved_winner_name: participant.name,
+             reserved_winner_email: participant.email,
+             reserved_at: DateTime.utc_now()
+           })
+           |> Repo.update!()
+
+           participant
+         end) do
+      {:ok, participant} -> {:ok, participant}
+      {:error, reason} -> {:error, reason}
+    end
+  rescue
+    Enum.EmptyError -> {:error, :no_eligible_participant}
+  end
+
+  def confirm_prize_winner(prize_id) do
+    case Repo.transaction(fn ->
+           prize =
+             Repo.one!(from prize in Prize, where: prize.id == ^prize_id, lock: "FOR UPDATE")
+
+           if is_nil(prize.reserved_winner_email) do
+             Repo.rollback(:winner_not_reserved)
+           end
+
+           prize
+           |> Prize.changeset(%{
+             winner_name: prize.reserved_winner_name,
+             winner_email: prize.reserved_winner_email,
+             reserved_winner_name: nil,
+             reserved_winner_email: nil,
+             reserved_at: nil
+           })
+           |> Repo.update!()
+         end) do
+      {:ok, prize} -> {:ok, prize}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def clear_prize_winner_reservation(nil), do: :ok
+
+  def clear_prize_winner_reservation(prize_id) do
+    Prize
+    |> where([prize], prize.id == ^prize_id)
+    |> Repo.update_all(
+      set: [reserved_winner_name: nil, reserved_winner_email: nil, reserved_at: nil]
+    )
+  end
+
   @doc """
   Deletes a prize.
 
@@ -209,8 +314,6 @@ defmodule Sorteios.Rooms do
   def change_prize(%Prize{} = prize, attrs \\ %{}) do
     Prize.changeset(prize, attrs)
   end
-
-  alias Sorteios.Rooms.Participant
 
   @doc """
   Returns the list of participants.

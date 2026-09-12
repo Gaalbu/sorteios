@@ -99,4 +99,55 @@ defmodule Sorteios.RoomsTest do
       assert %Ecto.Changeset{} = Rooms.change_participant(participant)
     end
   end
+
+  describe "prize winner reservations" do
+    import Sorteios.RoomsFixtures
+
+    test "reserves different participants for different prizes in one room" do
+      room = room_fixture()
+      first_prize = prize_fixture(room, %{name: "First Prize"})
+      second_prize = prize_fixture(room, %{name: "Second Prize"})
+
+      {:ok, first_participant} =
+        Rooms.create_participant(%{
+          name: "First Participant",
+          email: "first@example.com",
+          room_id: room.id
+        })
+
+      {:ok, second_participant} =
+        Rooms.create_participant(%{
+          name: "Second Participant",
+          email: "second@example.com",
+          room_id: room.id
+        })
+
+      assert {:ok, first_winner} =
+               Rooms.reserve_prize_winner(first_prize.id, room.id, "admin@example.com")
+
+      assert {:ok, second_winner} =
+               Rooms.reserve_prize_winner(second_prize.id, room.id, "admin@example.com")
+
+      assert first_winner.email in [first_participant.email, second_participant.email]
+      assert second_winner.email in [first_participant.email, second_participant.email]
+      refute first_winner.email == second_winner.email
+    end
+
+    test "a prize cannot be reserved twice" do
+      room = room_fixture()
+      prize = prize_fixture(room)
+
+      {:ok, _participant} =
+        Rooms.create_participant(%{
+          name: "Participant",
+          email: "participant@example.com",
+          room_id: room.id
+        })
+
+      assert {:ok, _winner} = Rooms.reserve_prize_winner(prize.id, room.id, "admin@example.com")
+
+      assert {:error, :prize_unavailable} =
+               Rooms.reserve_prize_winner(prize.id, room.id, "admin@example.com")
+    end
+  end
 end
