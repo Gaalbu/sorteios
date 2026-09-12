@@ -275,7 +275,10 @@ defmodule SorteiosWeb.RoomLive.Show do
       |> assign(:drawing_prize_id, nil)
       |> assign(:random_person, nil)
       |> assign(:loading_winner?, false)
-      |> put_flash(:success, "#{winner.name} ganhou #{prize.name}")
+      |> put_flash(
+        :success,
+        gettext("%{winner} won %{prize}", winner: winner.name, prize: prize.name)
+      )
 
     {:noreply, socket}
   end
