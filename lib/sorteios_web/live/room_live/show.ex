@@ -224,6 +224,9 @@ defmodule SorteiosWeb.RoomLive.Show do
       eligible =
         socket.assigns.users
         |> Enum.reject(&(&1.email == socket.assigns.current_user.email))
+        |> Enum.reject(fn user ->
+          Enum.any?(socket.assigns.prizes, &(&1.winner_email == user.email))
+        end)
 
       if Enum.empty?(eligible) do
         PubSub.broadcast_from!(Sorteios.PubSub, self(), topic(socket), %{event: "draw_cancelled"})

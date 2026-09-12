@@ -447,6 +447,34 @@ defmodule SorteiosWeb.RoomLiveTest do
       assert html =~ "Other Person" or html =~ "Admin User"
     end
 
+    test "a previous prize winner is not drawn again", %{conn: conn, room: room, prize: prize} do
+      {:ok, _} =
+        Rooms.create_participant(%{
+          name: "Previous Winner",
+          email: "previous-winner@example.com",
+          room_id: room.id
+        })
+
+      _claimed =
+        prize_fixture(room, %{
+          name: "Claimed Prize",
+          winner_name: "Previous Winner",
+          winner_email: "previous-winner@example.com"
+        })
+
+      conn = conn_as_admin(conn, room)
+      {:ok, lv, _html} = live(conn, Routes.room_show_path(conn, :show, room))
+
+      lv
+      |> element("button[phx-click='draw_prize'][phx-value-prize-id='#{prize.id}']")
+      |> render_click()
+
+      send(lv.pid, {:run_search, prize.id})
+
+      winner_html = lv |> element("div.winner-enter h3") |> render()
+      refute winner_html =~ "Previous Winner"
+    end
+
     test "after the delay Assign and Re-draw buttons appear", %{
       conn: conn,
       room: room,
