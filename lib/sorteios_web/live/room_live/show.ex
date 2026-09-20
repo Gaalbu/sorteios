@@ -10,6 +10,8 @@ defmodule SorteiosWeb.RoomLive.Show do
 
   @impl true
   def mount(%{"id" => id}, %{"name" => name, "email" => email} = session, socket) do
+    Gettext.put_locale(SorteiosWeb.Gettext, session["locale"] || "en")
+
     if room = Rooms.get_room(id) do
       current_user = %{
         name: name,
@@ -31,7 +33,7 @@ defmodule SorteiosWeb.RoomLive.Show do
       socket =
         assign(
           socket,
-          page_title: "Room #{id}",
+          page_title: gettext("Room %{id}", id: id),
           admin?: session["admin:#{id}"] == id,
           id: id,
           room: room,
@@ -54,15 +56,17 @@ defmodule SorteiosWeb.RoomLive.Show do
     else
       {:ok,
        socket
-       |> put_flash(:error, "Room not found")
+       |> put_flash(:error, gettext("Room not found"))
        |> redirect(to: Routes.session_path(socket, :new))}
     end
   end
 
-  def mount(%{"id" => id}, _session, socket) do
+  def mount(%{"id" => id}, session, socket) do
+    Gettext.put_locale(SorteiosWeb.Gettext, session["locale"] || "en")
+
     {:ok,
      socket
-     |> put_flash(:info, "You need to specify your name and email to enter")
+     |> put_flash(:info, gettext("You need to specify your name and email to enter"))
      |> redirect(to: Routes.session_path(socket, :new, room_id: id))}
   end
 
@@ -110,7 +114,7 @@ defmodule SorteiosWeb.RoomLive.Show do
         {:noreply,
          socket
          |> reload_prizes()
-         |> put_flash(:info, "Prize created successfully")}
+         |> put_flash(:info, gettext("Prize created successfully"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
@@ -140,7 +144,7 @@ defmodule SorteiosWeb.RoomLive.Show do
           {:noreply,
            socket
            |> reload_prizes()
-           |> put_flash(:info, "Prize created successfully")}
+           |> put_flash(:info, gettext("Prize created successfully"))}
 
         {:error, %Ecto.Changeset{} = changeset} ->
           {:noreply, assign(socket, changeset: changeset)}
@@ -159,7 +163,7 @@ defmodule SorteiosWeb.RoomLive.Show do
         {:noreply,
          socket
          |> reload_prizes()
-         |> put_flash(:info, "Prize cloned successfully")}
+         |> put_flash(:info, gettext("Prize cloned successfully"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
@@ -179,7 +183,7 @@ defmodule SorteiosWeb.RoomLive.Show do
         {:noreply,
          socket
          |> reload_prizes()
-         |> put_flash(:info, "Prize removed successfully")}
+         |> put_flash(:info, gettext("Prize removed successfully"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
@@ -215,7 +219,7 @@ defmodule SorteiosWeb.RoomLive.Show do
          socket.assigns.random_person do
       {:noreply, award_prize(socket, prize_id, socket.assigns.reservation_token)}
     else
-      {:noreply, put_flash(socket, :error, "No prize or winner found")}
+      {:noreply, put_flash(socket, :error, gettext("No prize or winner found"))}
     end
   end
 
@@ -343,7 +347,7 @@ defmodule SorteiosWeb.RoomLive.Show do
        |> clear_active_draw()
        |> put_flash(
          :success,
-         "#{winner.name} ganhou #{prize.name}"
+         gettext("%{winner} won %{prize}", winner: winner.name, prize: prize.name)
        )}
     else
       {:noreply, socket}
@@ -357,7 +361,7 @@ defmodule SorteiosWeb.RoomLive.Show do
      |> clear_active_draw()
      |> put_flash(
        :success,
-       "#{winner.name} ganhou #{prize.name}"
+       gettext("%{winner} won %{prize}", winner: winner.name, prize: prize.name)
      )}
   end
 
@@ -422,12 +426,12 @@ defmodule SorteiosWeb.RoomLive.Show do
   end
 
   defp draw_error_message(:prize_unavailable),
-    do: "This prize is currently reserved; try again later"
+    do: gettext("This prize is currently reserved; try again later")
 
   defp draw_error_message(:reservation_expired),
-    do: "The draw expired; please draw again"
+    do: gettext("The draw expired; please draw again")
 
-  defp draw_error_message(_reason), do: "No prize or winner found"
+  defp draw_error_message(_reason), do: gettext("No prize or winner found")
 
   def compute_chance(users_length) do
     if users_length > 0 do
