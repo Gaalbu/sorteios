@@ -20,9 +20,9 @@ services:
       DATABASE_URL: ecto://postgres:postgres@db/sorteios_dev
       PHX_HOST: localhost
       PHX_SERVER: "true"
-      PORT: "8080"
+      PORT: ${PORT:-4000}
       ECTO_IPV6: "false"
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE in .env}
     ports:
-      - "8080:8080"
+      - "${PORT:-4000}:${PORT:-4000}"
     command: ["sh", "-c", "/app/bin/migrate && /app/bin/server"]
